@@ -28,7 +28,7 @@ def rls():
     global held_for
     print(held_for)
     if (held_for >= hold_time_max):
-        
+        startOrder()
     held_for = 0.0
     clearPixels()
 
@@ -117,7 +117,7 @@ def startOrder():
             response = order.place(card)
         else:
             response = order.pay_with()
-        
+        print(response)
 
 clearPixels()
 button=Button(use_button, hold_time=0.1, hold_repeat=True)

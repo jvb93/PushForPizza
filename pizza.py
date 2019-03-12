@@ -1,4 +1,3 @@
-use_button=27                       # lowest button on PiTFT+
 
 from gpiozero import Button
 from signal import pause
@@ -7,11 +6,19 @@ import colorsys
 import time
 import board
 import neopixel
+import configparser
+from pizzapi import *
+
+
 
 num_pixels = 8
 hold_time_max = 3.0
 pixel_pin = board.D18
 ORDER = neopixel.RGB
+use_button=27
+config = configparser.ConfigParser()
+config.read('config.ini')
+config = config['DEFAULT']
 
 pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER)
 
@@ -21,11 +28,8 @@ def rls():
     global held_for
     print(held_for)
     if (held_for >= hold_time_max):
-        held_for = 0.0
-        for x in range(10):
-            rainbow_cycle(.001)
-    else:
-        held_for = 0.0
+        
+    held_for = 0.0
     clearPixels()
 
 def hld():
@@ -38,6 +42,10 @@ def hld():
         held_for = hold_time_max
     print(held_for)
     setColor(mapPercentageColor((held_for/hold_time_max)*100), -1)
+
+def showSuccess():
+    for x in range(10):
+        rainbow_cycle(.001)
 
 def setColor(color, pixel):
     if pixel < 0:
@@ -92,6 +100,24 @@ def wheel(pos):
         g = int(pos*3)
         b = int(255 - pos*3)
     return (r, g, b) if ORDER == neopixel.RGB or ORDER == neopixel.GRB else (r, g, b, 0)
+
+def startOrder():
+        print('order starting')
+        customer = Customer(config['first_name'], config['last_name'], config['email'], config['phone'])
+        address = Address(config['street_address'], config['city'], config['state_code'], config['zip'])
+        store = address.closest_store()
+       
+        order = Order(store, customer, address)
+
+        order.add_item(config['order_item'])
+
+        response = 0
+        if(config['production'] == "1"):
+            card = PaymentObject(config['card_number'], config['expiry'], config['cvc'], config['card_zip'])
+            response = order.place(card)
+        else:
+            response = order.pay_with()
+        
 
 clearPixels()
 button=Button(use_button, hold_time=0.1, hold_repeat=True)
